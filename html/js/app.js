@@ -45,6 +45,7 @@ var LeafletAdapter = function () {
     var currentBaseMap = null;
     var alertLayers = [];
     var alertClickCb = null;
+    var infoPopup = null;
 
     function paneZ(name, fallback) {
         var val = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
@@ -236,6 +237,25 @@ var LeafletAdapter = function () {
                     } catch (e) {  }
                 }, 0);
             }
+        },
+
+        onMapClick: function (cb) {
+            map.on('click', function (e) { cb(e.latlng.lat, e.latlng.lng); });
+        },
+
+        openPopup: function (lat, lon, html) {
+            infoPopup = L.popup({ maxWidth: 320, autoPanPadding: [20, 20] })
+                .setLatLng([lat, lon])
+                .setContent(html)
+                .openOn(map);
+        },
+
+        setPopupContent: function (html) {
+            if (infoPopup && map.hasLayer(infoPopup)) infoPopup.setContent(html);
+        },
+
+        isPopupOpen: function () {
+            return !!(infoPopup && map.hasLayer(infoPopup));
         },
 
         flyTo: function (lat, lon, zoom) {
