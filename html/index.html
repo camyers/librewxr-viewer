@@ -49,6 +49,13 @@
         <option value="osm-dark">Map: OSM Dark</option>
     </select>
     <div class="toolbar-actions">
+        <div class="lv-weather">
+            <button type="button" class="icon-btn" id="lv-weather-btn" aria-haspopup="true" aria-expanded="false" aria-controls="lv-weather-menu" aria-label="Current weather" title="Current weather">
+                <span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                <span id="lv-weather-temp">--&deg;</span>
+            </button>
+            <div class="settings-menu lv-wx-menu" id="lv-weather-menu" role="region" aria-label="Current weather at your location" hidden></div>
+        </div>
         <button type="button" class="icon-btn" id="lv-alerts" aria-pressed="false" aria-label="Toggle weather alerts" title="Weather alerts">
             <span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M12 3 L20 19 H4 Z"/><line x1="12" y1="10" x2="12" y2="15"/><circle cx="12" cy="17.5" r="1"/></svg></span>
             Alerts
@@ -74,6 +81,7 @@
                 <label><input type="checkbox" data-key="arrows"> Motion arrows</label>
                 <label><input type="checkbox" data-key="cells"> Cell detection</label>
                 <label><input type="checkbox" data-key="basemap"> Base map</label>
+                <label><input type="checkbox" data-key="weather"> Current weather</label>
                 <label><input type="checkbox" data-key="alerts"> Alerts</label>
                 <label><input type="checkbox" data-key="theme"> Theme toggle</label>
                 <label><input type="checkbox" data-key="options"> Options</label>
@@ -85,6 +93,11 @@
 </div>
 
 <div class="options-panel" id="lv-options">
+    <label class="opacity-control" id="lv-opacity-wrap" for="lv-opacity">
+        Radar opacity
+        <input type="range" id="lv-opacity" min="10" max="100" step="5" value="80">
+        <output id="lv-opacity-value" for="lv-opacity">80%</output>
+    </label>
     <label><input type="checkbox" id="lv-smooth" checked/> Smoothing</label>
     <label><input type="checkbox" id="lv-snow" checked/> Snow mask</label>
     <label for="lv-format">Format</label>
@@ -142,6 +155,7 @@
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="js/viewer-core.js"></script>
+<script src="js/location.js"></script>
 <script src="js/app.js"></script>
 <script src="js/search.js"></script>
 <script src="js/weather.js"></script>
