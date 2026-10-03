@@ -1145,7 +1145,6 @@ html[data-hide~="cells"] #lv-cells,
 html[data-hide~="basemap"] #lv-basemap,
 html[data-hide~="weather"] .lv-weather,
 html[data-hide~="alerts"] #lv-alerts,
-html[data-hide~="theme"] #lv-theme,
 html[data-hide~="options"] #lv-options-btn,
 html[data-hide~="options"] #lv-options,
 html[data-hide~="locate"] #lv-locate {

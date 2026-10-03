@@ -799,6 +799,8 @@
             var dark = state.theme === 'dark';
             btn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
             btn.setAttribute('title', dark ? 'Switch to light theme' : 'Switch to dark theme');
+            var label = byId('lv-theme-label');
+            if (label) label.textContent = dark ? 'Light mode' : 'Dark mode';
             var sun = byId('lv-theme-sun');
             var moon = byId('lv-theme-moon');
             if (sun) sun.style.display = dark ? '' : 'none';

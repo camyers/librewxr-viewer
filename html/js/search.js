@@ -17,6 +17,15 @@
         return 11;
     }
 
+    var locate = document.getElementById('lv-locate');
+    if (locate) {
+        locate.addEventListener('click', function () {
+            input.value = '';
+            input.title = '';
+            form.classList.remove('error');
+        });
+    }
+
     function fail(message) {
         form.classList.add('error');
         input.title = message;

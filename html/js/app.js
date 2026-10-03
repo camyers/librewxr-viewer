@@ -271,15 +271,24 @@ var LeafletAdapter = function () {
 };
 
 var LVR_OPACITY_KEY = 'librewxr.radarOpacity';
+var LVR_THEME_KEY = 'librewxr.theme';
 
-function lvrLoadOpacity() {
+function lvrLoad(key) {
     try {
-        var v = parseFloat(localStorage.getItem(LVR_OPACITY_KEY));
-        return isNaN(v) ? 0.8 : v;
+        return localStorage.getItem(key);
     } catch (e) {
-        return 0.8;
+        return null;
     }
 }
+
+function lvrSave(key, value) {
+    try {
+        localStorage.setItem(key, String(value));
+    } catch (e) {}
+}
+
+var lvrOpacity = parseFloat(lvrLoad(LVR_OPACITY_KEY));
+var lvrTheme = lvrLoad(LVR_THEME_KEY) === 'light' ? 'light' : 'dark';
 
 var adapter = new LeafletAdapter();
 var lvrHome = LVLocation.get();
@@ -290,11 +299,13 @@ LibreWXR.createViewer({
     view: { lat: lvrHome ? lvrHome.lat : 39.8283, lon: lvrHome ? lvrHome.lon : -98.5795, zoom: 10, maxZoom: 12 },
     nowMarker: true,
     nowMarkerLabel: true,
-    radarOpacity: lvrLoadOpacity(),
+    theme: lvrTheme,
+    onThemeChange: function (theme) {
+        lvrSave(LVR_THEME_KEY, theme);
+    },
+    radarOpacity: isNaN(lvrOpacity) ? 0.8 : lvrOpacity,
     onRadarOpacityChange: function (v) {
-        try {
-            localStorage.setItem(LVR_OPACITY_KEY, String(v));
-        } catch (e) {}
+        lvrSave(LVR_OPACITY_KEY, v);
     },
     onLocate: function (lat, lon) {
         LVLocation.set(lat, lon);
