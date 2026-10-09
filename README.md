@@ -17,15 +17,15 @@
 
 A self-hosted weather radar page for my home server. It's a static Leaflet viewer that I adapted from the [LibreWXR](https://github.com/JoshuaKimsey/LibreWXR) example viewer, then extended with address search, a pinned location, a current-weather dropdown, a radar opacity slider and a few other quality-of-life changes. nginx serves it as a Dockge stack on Unraid. There's no image to build: the stack runs the stock `nginx:alpine` image and bind-mounts the `html/` folder from this repo.
 
-## Why I built this
+## Why this exists
 
-On January 1st, 2026, Rain Viewer restricted its free API tier to zoom level 7, one color scheme, and no satellite or forecast frames. That broke the radar page I kept open on my home network. LibreWXR is a self-hostable, drop-in replacement for the Rain Viewer API, and it ships with example viewers that already handle playback, color schemes, alerts and satellite.
+On January 1st, 2026, Rain Viewer restricted its free API tier to zoom level 7, one color scheme, and no satellite or forecast frames. LibreWXR is a self-hostable, drop-in replacement for the Rain Viewer API, and it ships with example viewers that already handle playback, color schemes, alerts and satellite.
 
-I wanted something I could leave running on the Unraid box and open from any device on the network, so I took the Leaflet example and turned it into a small, plain project:
+This project packages the Leaflet example as a viewer that can run on a home server and be opened from any device on the network:
 
 - **No build step.** It's static HTML, CSS and JavaScript, so the repo is the deployment.
 - **Managed like any other stack.** Dockge picks it up from its stacks folder, and updating it is a `git pull`.
-- **Centered on where I am.** It opens on my pinned location with the local conditions one click away, instead of on a fixed map center.
+- **Centered on your location.** It opens on your pinned location with local conditions one click away, instead of a fixed map center.
 
 ## Where the original files came from
 
