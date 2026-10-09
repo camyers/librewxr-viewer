@@ -266,6 +266,18 @@ body {
 .options-panel label:hover {
     color: var(--text);
 }
+.opacity-control input[type="range"] {
+    width: 120px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+.opacity-control output {
+    min-width: 3.5ch;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+}
 .options-panel input[type="checkbox"] {
     accent-color: var(--accent);
     cursor: pointer;
@@ -1048,7 +1060,8 @@ body {
     opacity: 0.6;
 }
 
-.settings {
+.settings,
+.lv-weather {
     position: relative;
 }
 .settings-menu {
@@ -1130,8 +1143,8 @@ html[data-hide~="scheme"] #lv-scheme,
 html[data-hide~="arrows"] #lv-arrows,
 html[data-hide~="cells"] #lv-cells,
 html[data-hide~="basemap"] #lv-basemap,
+html[data-hide~="weather"] .lv-weather,
 html[data-hide~="alerts"] #lv-alerts,
-html[data-hide~="theme"] #lv-theme,
 html[data-hide~="options"] #lv-options-btn,
 html[data-hide~="options"] #lv-options,
 html[data-hide~="locate"] #lv-locate {
@@ -1144,54 +1157,77 @@ html[data-hide~="locate"] #lv-locate {
     .toolbar-actions { gap: var(--space-1); }
 }
 
-.lv-wx {
-    min-width: 240px;
-    font-size: 13px;
-    line-height: 1.4;
-    color: #1f2937;
-}
-.lv-wx-head {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-}
-.lv-wx-temp {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-}
-.lv-wx-desc {
-    font-weight: 600;
-}
-.lv-wx-sub {
-    font-size: 12px;
-    color: #6b7280;
-}
-.lv-wx-grid {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 2px var(--space-3);
-    margin: var(--space-2) 0;
-}
-.lv-wx-grid dt {
-    color: #6b7280;
-}
-.lv-wx-grid dd {
-    text-align: right;
+#lv-weather-temp {
     font-variant-numeric: tabular-nums;
 }
-.lv-wx-title {
-    margin: var(--space-3) 0 var(--space-1);
+.lv-wx-menu {
+    min-width: 300px;
+}
+.lv-wx-place {
+    padding: 0 var(--space-2);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text);
+}
+.lv-wx-desc,
+.lv-wx-sub {
+    padding: 2px var(--space-2) var(--space-2);
+    font-size: var(--font-size-md);
+    color: var(--text-secondary);
+}
+.lv-wx-row {
+    display: grid;
+    grid-template-columns: 20px 1fr auto;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px var(--space-2);
+    border-top: 1px solid var(--btn-border);
+    font-size: var(--font-size-md);
+}
+.lv-wx-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--accent);
+    transition: transform var(--transition-slow);
+}
+.lv-wx-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.lv-wx-label {
+    color: var(--text-secondary);
+}
+.lv-wx-value {
+    text-align: right;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+.lv-wx-extra {
+    display: block;
     font-size: var(--font-size-sm);
-    font-weight: 700;
+    font-weight: 400;
+    color: var(--text-dim);
+}
+.lv-wx-title {
+    padding: var(--space-3) var(--space-2) var(--space-1);
+    border-top: 1px solid var(--btn-border);
+    font-size: var(--font-size-xs);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #6b7280;
+    color: var(--text-dim);
 }
 .lv-wx-hours {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: var(--space-1);
+    padding: 0 var(--space-2) var(--space-2);
     text-align: center;
     font-variant-numeric: tabular-nums;
 }
@@ -1201,30 +1237,78 @@ html[data-hide~="locate"] #lv-locate {
 .lv-wx-hour-time,
 .lv-wx-hour-pop {
     font-size: var(--font-size-sm);
-    color: #6b7280;
+    color: var(--text-dim);
 }
 .lv-wx-hour-temp {
     font-weight: 600;
+    color: var(--text);
+}
+.lv-wx-days {
+    padding: 0 var(--space-2) var(--space-2);
 }
 .lv-wx-day {
     display: grid;
     grid-template-columns: 44px 1fr auto 36px;
     gap: var(--space-2);
-    padding: 2px 0;
+    padding: 3px 0;
+    font-size: var(--font-size-md);
     font-variant-numeric: tabular-nums;
 }
-.lv-wx-day-name {
+.lv-wx-day-name,
+.lv-wx-day-temp {
     font-weight: 600;
+    color: var(--text);
 }
 .lv-wx-day-desc,
 .lv-wx-day-pop {
-    color: #6b7280;
+    color: var(--text-secondary);
 }
 .lv-wx-day-pop {
     text-align: right;
 }
 .lv-wx-credit {
-    margin-top: var(--space-2);
+    padding: var(--space-2) var(--space-2) 2px;
+    border-top: 1px solid var(--btn-border);
     font-size: var(--font-size-xs);
-    color: #9ca3af;
+    color: var(--text-dim);
+}
+.lv-wx-credit a {
+    color: var(--text-secondary);
+}
+
+.leaflet-marker-icon.lv-pin {
+    background: none;
+    border: none;
+}
+.lv-pin svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+}
+.lv-pin-body {
+    fill: #e53935;
+    stroke: #fff;
+    stroke-width: 2.5;
+}
+.lv-pin-dot {
+    fill: #fff;
+}
+
+@media (max-width: 600px) {
+    .lv-wx-menu {
+        position: fixed;
+        top: auto;
+        left: var(--space-4);
+        right: var(--space-4);
+        min-width: 0;
+        margin-top: var(--space-2);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lv-wx-icon {
+        transition: none;
+    }
 }

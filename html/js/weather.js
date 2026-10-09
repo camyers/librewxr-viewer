@@ -1,6 +1,4 @@
 (function () {
-    if (typeof adapter === 'undefined' || !adapter.onMapClick) return;
-
     var API_URL = 'https://api.open-meteo.com/v1/forecast';
     var CACHE_MS = 10 * 60 * 1000;
     var TIMEOUT_MS = 10000;
@@ -36,9 +34,22 @@
     };
     var COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
 
+    var ICONS = {
+        temp: '<svg viewBox="0 0 24 24"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>',
+        wind: '<svg viewBox="0 0 24 24"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>',
+        arrow: '<svg viewBox="0 0 24 24"><polygon points="12 2 19 21 12 17 5 21 12 2"/></svg>',
+        precip: '<svg viewBox="0 0 24 24"><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><line x1="16" y1="13" x2="16" y2="21"/></svg>',
+        humidity: '<svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+        pressure: '<svg viewBox="0 0 24 24"><path d="M3.5 17a9 9 0 1 1 17 0"/><line x1="12" y1="15" x2="16" y2="9"/><circle cx="12" cy="15" r="1"/></svg>'
+    };
+
+    var button = document.getElementById('lv-weather-btn');
+    var menu = document.getElementById('lv-weather-menu');
+    var tempEl = document.getElementById('lv-weather-temp');
+    if (!button || !menu || !tempEl) return;
+
     var cache = {};
     var requestId = 0;
-    var last = null;
     var units = loadUnits();
 
     function loadUnits() {
@@ -91,6 +102,15 @@
         return d.toLocaleDateString(undefined, { weekday: 'short' });
     }
 
+    function cacheKey(loc) {
+        return loc.lat.toFixed(2) + ',' + loc.lon.toFixed(2) + ',' + units;
+    }
+
+    function fresh(loc) {
+        var hit = cache[cacheKey(loc)];
+        return hit && Date.now() - hit.at < CACHE_MS ? hit.data : null;
+    }
+
     function buildUrl(lat, lon) {
         var params = {
             latitude: lat.toFixed(4),
@@ -108,14 +128,14 @@
         }).join('&');
     }
 
-    function fetchWeather(lat, lon) {
-        var key = lat.toFixed(2) + ',' + lon.toFixed(2) + ',' + units;
-        var hit = cache[key];
-        if (hit && Date.now() - hit.at < CACHE_MS) return Promise.resolve(hit.data);
+    function fetchWeather(loc) {
+        var hit = fresh(loc);
+        if (hit) return Promise.resolve(hit);
 
+        var key = cacheKey(loc);
         var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
         var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, TIMEOUT_MS) : null;
-        return fetch(buildUrl(lat, lon), ctrl ? { signal: ctrl.signal } : undefined)
+        return fetch(buildUrl(loc.lat, wrapLon(loc.lon)), ctrl ? { signal: ctrl.signal } : undefined)
             .then(function (response) {
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.json();
@@ -134,6 +154,23 @@
             });
     }
 
+    function placeName(loc) {
+        return loc.label || (loc.lat.toFixed(3) + ', ' + loc.lon.toFixed(3));
+    }
+
+    function header(loc) {
+        return '<div class="settings-menu-title">Current conditions</div>' +
+            '<div class="lv-wx-place">' + esc(loc ? placeName(loc) : 'No location set') + '</div>';
+    }
+
+    function row(icon, label, value, extra, iconStyle) {
+        return '<div class="lv-wx-row">' +
+            '<span class="lv-wx-icon"' + (iconStyle ? ' style="' + iconStyle + '"' : '') + '>' + icon + '</span>' +
+            '<span class="lv-wx-label">' + label + '</span>' +
+            '<span class="lv-wx-value">' + value + (extra ? '<span class="lv-wx-extra">' + extra + '</span>' : '') + '</span>' +
+            '</div>';
+    }
+
     function renderHours(data, u) {
         var h = data.hourly;
         if (!h || !h.time) return '';
@@ -144,7 +181,7 @@
         for (var n = 0; n < HOURLY_COUNT; n++) {
             var i = start + n * HOURLY_STEP;
             if (i >= h.time.length) break;
-            cells += '<div class="lv-wx-hour">' +
+            cells += '<div class="lv-wx-hour" title="' + esc(describe(h.weather_code[i])) + '">' +
                 '<span class="lv-wx-hour-time">' + esc(hourLabel(h.time[i], u.hour12)) + '</span>' +
                 '<span class="lv-wx-hour-temp">' + num(h.temperature_2m[i]) + '°</span>' +
                 '<span class="lv-wx-hour-pop">' + num(h.precipitation_probability[i]) + '%</span>' +
@@ -158,61 +195,107 @@
         if (!d || !d.time) return '';
         var rows = '';
         for (var i = 0; i < d.time.length && i < DAY_COUNT; i++) {
+            var amount = typeof d.precipitation_sum[i] === 'number' && d.precipitation_sum[i] > 0
+                ? ', ' + num(d.precipitation_sum[i], u.precipDigits) + ' ' + u.precip : '';
             rows += '<div class="lv-wx-day">' +
                 '<span class="lv-wx-day-name">' + esc(dayLabel(d.time[i], i)) + '</span>' +
                 '<span class="lv-wx-day-desc">' + esc(describe(d.weather_code[i])) + '</span>' +
                 '<span class="lv-wx-day-temp">' + num(d.temperature_2m_max[i]) + '° / ' + num(d.temperature_2m_min[i]) + '°</span>' +
-                '<span class="lv-wx-day-pop">' + num(d.precipitation_probability_max[i]) + '%</span>' +
+                '<span class="lv-wx-day-pop" title="Chance of precipitation' + esc(amount) + '">' + num(d.precipitation_probability_max[i]) + '%</span>' +
                 '</div>';
         }
         return rows ? '<div class="lv-wx-title">Forecast</div><div class="lv-wx-days">' + rows + '</div>' : '';
     }
 
-    function render(data) {
+    function render(loc, data) {
         var u = UNIT_SETS[units];
         var c = data.current;
-        var wind = num(c.wind_speed_10m) + ' ' + u.wind + ' ' + compass(c.wind_direction_10m);
-        if (typeof c.wind_gusts_10m === 'number') wind += ', gusts ' + num(c.wind_gusts_10m);
+        var dir = c.wind_direction_10m;
+        var hasDir = typeof dir === 'number' && isFinite(dir);
+        var gusts = typeof c.wind_gusts_10m === 'number' ? 'Gusts ' + num(c.wind_gusts_10m) + ' ' + u.wind : '';
 
-        return '<div class="lv-wx">' +
-            '<div class="lv-wx-head">' +
-                '<span class="lv-wx-temp">' + num(c.temperature_2m) + u.temp + '</span>' +
-                '<span class="lv-wx-desc">' + esc(describe(c.weather_code)) + '</span>' +
-            '</div>' +
-            '<div class="lv-wx-sub">Feels like ' + num(c.apparent_temperature) + u.temp + '</div>' +
-            '<dl class="lv-wx-grid">' +
-                '<dt>Wind</dt><dd>' + esc(wind.trim()) + '</dd>' +
-                '<dt>Precipitation</dt><dd>' + num(c.precipitation, u.precipDigits) + ' ' + u.precip + '</dd>' +
-                '<dt>Humidity</dt><dd>' + num(c.relative_humidity_2m) + '%</dd>' +
-                '<dt>Pressure</dt><dd>' + (typeof c.pressure_msl === 'number' ? u.pressure(c.pressure_msl) : '--') + '</dd>' +
-            '</dl>' +
+        return header(loc) +
+            '<div class="lv-wx-desc">' + esc(describe(c.weather_code)) + '</div>' +
+            row(ICONS.temp, 'Temperature', num(c.temperature_2m) + u.temp,
+                'Feels like ' + num(c.apparent_temperature) + '°') +
+            row(ICONS.wind, 'Wind speed', num(c.wind_speed_10m) + ' ' + u.wind, gusts) +
+            row(ICONS.arrow, 'Direction',
+                hasDir ? 'From ' + compass(dir) : '--',
+                hasDir ? Math.round(dir) + '°' : '',
+                hasDir ? 'transform: rotate(' + ((dir + 180) % 360) + 'deg)' : '') +
+            row(ICONS.precip, 'Precipitation', num(c.precipitation, u.precipDigits) + ' ' + u.precip, 'Last hour') +
+            row(ICONS.humidity, 'Humidity', num(c.relative_humidity_2m) + '%') +
+            row(ICONS.pressure, 'Pressure', typeof c.pressure_msl === 'number' ? u.pressure(c.pressure_msl) : '--') +
             renderHours(data, u) +
             renderDays(data, u) +
-            '<div class="lv-wx-credit">Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></div>' +
-            '</div>';
+            '<div class="lv-wx-credit">Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></div>';
     }
 
-    function message(text) {
-        return '<div class="lv-wx"><div class="lv-wx-sub">' + esc(text) + '</div></div>';
+    function message(loc, text) {
+        return header(loc) + '<div class="lv-wx-sub">' + esc(text) + '</div>';
     }
 
-    function show(lat, lon, reopen) {
+    function setButton(text, title) {
+        tempEl.textContent = text;
+        button.title = title;
+        button.setAttribute('aria-label', title);
+    }
+
+    function refresh(force) {
+        var loc = LVLocation.get();
         var token = ++requestId;
-        last = { lat: lat, lon: lon };
-        if (reopen) adapter.openPopup(lat, lon, message('Loading weather...'));
+        if (loc && force === true) delete cache[cacheKey(loc)];
+        if (!loc) {
+            setButton('--°', 'Current weather');
+            menu.innerHTML = message(null, 'Search for a place or use Locate me to set your location.');
+            return;
+        }
 
-        fetchWeather(lat, wrapLon(lon))
+        if (!fresh(loc)) menu.innerHTML = message(loc, 'Loading weather...');
+        fetchWeather(loc)
             .then(function (data) {
-                if (token === requestId) adapter.setPopupContent(render(data));
+                if (token !== requestId) return;
+                var temp = num(data.current.temperature_2m) + '°';
+                setButton(temp, 'Current weather at ' + placeName(loc) + ': ' + temp);
+                menu.innerHTML = render(loc, data);
             })
             .catch(function (err) {
                 console.warn('[weather] request failed:', err);
-                if (token === requestId) adapter.setPopupContent(message('Weather unavailable: ' + err.message));
+                if (token !== requestId) return;
+                setButton('--°', 'Current weather unavailable');
+                menu.innerHTML = message(loc, 'Weather unavailable: ' + err.message);
             });
     }
 
-    adapter.onMapClick(function (lat, lon) {
-        show(lat, lon, true);
+    function setOpen(open) {
+        menu.hidden = !open;
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) refresh();
+    }
+
+    button.addEventListener('click', function () {
+        setOpen(menu.hidden);
+    });
+
+    document.addEventListener('click', function (e) {
+        if (menu.hidden) return;
+        if (menu.contains(e.target) || button.contains(e.target)) return;
+        setOpen(false);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !menu.hidden) {
+            setOpen(false);
+            button.focus();
+        }
+    });
+
+    setInterval(function () {
+        if (!document.hidden) refresh(true);
+    }, CACHE_MS);
+
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) refresh();
     });
 
     var select = document.getElementById('lv-units');
@@ -222,7 +305,10 @@
             if (!UNIT_SETS[this.value]) return;
             units = this.value;
             saveUnits(units);
-            if (last && adapter.isPopupOpen()) show(last.lat, last.lon, false);
+            refresh();
         });
     }
+
+    LVLocation.subscribe(refresh);
+    if (!LVLocation.get()) refresh();
 })();

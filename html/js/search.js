@@ -17,6 +17,15 @@
         return 11;
     }
 
+    var locate = document.getElementById('lv-locate');
+    if (locate) {
+        locate.addEventListener('click', function () {
+            input.value = '';
+            input.title = '';
+            form.classList.remove('error');
+        });
+    }
+
     function fail(message) {
         form.classList.add('error');
         input.title = message;
@@ -31,7 +40,7 @@
         form.classList.add('busy');
         input.title = '';
 
-        fetch(GEOCODER_URL + '?format=jsonv2&limit=1&q=' + encodeURIComponent(query))
+        fetch(GEOCODER_URL + '?format=jsonv2&addressdetails=1&limit=1&q=' + encodeURIComponent(query))
             .then(function (response) {
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.json();
@@ -43,7 +52,10 @@
                 }
                 var hit = results[0];
                 var box = hit.boundingbox ? hit.boundingbox.map(parseFloat) : null;
-                adapter.flyTo(parseFloat(hit.lat), parseFloat(hit.lon), Math.min(zoomFor(box), MAX_ZOOM));
+                var lat = parseFloat(hit.lat);
+                var lon = parseFloat(hit.lon);
+                adapter.flyTo(lat, lon, Math.min(zoomFor(box), MAX_ZOOM));
+                LVLocation.set(lat, lon, LVLocation.labelFromAddress(hit.address) || hit.name || query);
                 input.blur();
             })
             .catch(function (err) {

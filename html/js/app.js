@@ -45,7 +45,11 @@ var LeafletAdapter = function () {
     var currentBaseMap = null;
     var alertLayers = [];
     var alertClickCb = null;
-    var infoPopup = null;
+    var locationPin = null;
+    var PIN_SVG = '<svg viewBox="0 0 28 40" aria-hidden="true">' +
+        '<path class="lv-pin-body" d="M14 1.5C7.1 1.5 1.5 7 1.5 13.9 1.5 23 14 38.5 14 38.5S26.5 23 26.5 13.9C26.5 7 20.9 1.5 14 1.5z"/>' +
+        '<circle class="lv-pin-dot" cx="14" cy="14" r="4.5"/>' +
+        '</svg>';
 
     function paneZ(name, fallback) {
         var val = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
@@ -239,23 +243,16 @@ var LeafletAdapter = function () {
             }
         },
 
-        onMapClick: function (cb) {
-            map.on('click', function (e) { cb(e.latlng.lat, e.latlng.lng); });
-        },
-
-        openPopup: function (lat, lon, html) {
-            infoPopup = L.popup({ maxWidth: 320, autoPanPadding: [20, 20] })
-                .setLatLng([lat, lon])
-                .setContent(html)
-                .openOn(map);
-        },
-
-        setPopupContent: function (html) {
-            if (infoPopup && map.hasLayer(infoPopup)) infoPopup.setContent(html);
-        },
-
-        isPopupOpen: function () {
-            return !!(infoPopup && map.hasLayer(infoPopup));
+        setLocationPin: function (lat, lon) {
+            if (locationPin) {
+                locationPin.setLatLng([lat, lon]);
+                return;
+            }
+            locationPin = L.marker([lat, lon], {
+                icon: L.divIcon({ className: 'lv-pin', html: PIN_SVG, iconSize: [28, 40], iconAnchor: [14, 39] }),
+                interactive: false,
+                keyboard: false
+            }).addTo(map);
         },
 
         flyTo: function (lat, lon, zoom) {
@@ -273,14 +270,56 @@ var LeafletAdapter = function () {
     };
 };
 
+var LVR_OPACITY_KEY = 'librewxr.radarOpacity';
+var LVR_THEME_KEY = 'librewxr.theme';
+
+function lvrLoad(key) {
+    try {
+        return localStorage.getItem(key);
+    } catch (e) {
+        return null;
+    }
+}
+
+function lvrSave(key, value) {
+    try {
+        localStorage.setItem(key, String(value));
+    } catch (e) {}
+}
+
+var lvrOpacity = parseFloat(lvrLoad(LVR_OPACITY_KEY));
+var lvrTheme = lvrLoad(LVR_THEME_KEY) === 'light' ? 'light' : 'dark';
+
 var adapter = new LeafletAdapter();
+var lvrHome = LVLocation.get();
 LibreWXR.createViewer({
     apiSources: LVR_API_SOURCES,
     apiFixed: LVR_API_FIXED,
-    view: { lat: 39.8283, lon: -98.5795, zoom: 10, maxZoom: 12 },
+    apiDefault: 'public',
+    view: { lat: lvrHome ? lvrHome.lat : 39.8283, lon: lvrHome ? lvrHome.lon : -98.5795, zoom: 10, maxZoom: 12 },
     nowMarker: true,
-    nowMarkerLabel: true
+    nowMarkerLabel: true,
+    theme: lvrTheme,
+    onThemeChange: function (theme) {
+        lvrSave(LVR_THEME_KEY, theme);
+    },
+    radarOpacity: isNaN(lvrOpacity) ? 0.8 : lvrOpacity,
+    onRadarOpacityChange: function (v) {
+        lvrSave(LVR_OPACITY_KEY, v);
+    },
+    onLocate: function (lat, lon) {
+        LVLocation.set(lat, lon);
+    }
 }, adapter);
+
+LVLocation.subscribe(function (loc) {
+    adapter.setLocationPin(loc.lat, loc.lon);
+});
+if (!lvrHome) {
+    LVLocation.detect()
+        .then(function (loc) { adapter.flyTo(loc.lat, loc.lon, 10); })
+        .catch(function (err) { console.warn('[location] detect failed:', err && err.message); });
+}
 
 (function () {
     var sel = document.getElementById('lv-basemap');

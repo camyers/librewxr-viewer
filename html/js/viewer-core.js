@@ -29,10 +29,13 @@
         locale: null,
         hour12: null,
         onThemeChange: null,
-        locateMode: null
+        locateMode: null,
+        apiDefault: null,
+        onLocate: null,
+        radarOpacity: 0.8,
+        onRadarOpacityChange: null
     };
 
-    var RADAR_OPACITY = 0.8;
     var SATELLITE_OPACITY = 0.8;
     var RADAR_ANIMATION_DELAY = 500;
     var RADAR_ANIMATION_PAUSE = 1500;
@@ -76,6 +79,7 @@
             format: config.format,
             tileSize: config.tileSize,
             layerMode: config.layerMode,
+            radarOpacity: clampOpacity(config.radarOpacity, 0.8),
             theme: config.theme,
             alertsEnabled: config.alerts,
             alertsEpoch: 0,
@@ -110,6 +114,11 @@
             return document.getElementById(id);
         }
 
+        function clampOpacity(v, fallback) {
+            v = parseFloat(v);
+            return isNaN(v) ? fallback : Math.max(0, Math.min(1, v));
+        }
+
         function cssVar(name, fallback) {
             var val = getComputedStyle(document.documentElement).getPropertyValue(name);
             val = val ? val.trim() : '';
@@ -127,6 +136,7 @@
         }
 
         function detectSourceDefault() {
+            if (config.apiDefault && config.apiSources[config.apiDefault]) return config.apiDefault;
             var loc = window.location;
             var isLocal = loc.protocol === 'file:' || loc.hostname === 'localhost' || loc.hostname === '127.0.0.1';
             return isLocal ? 'local' : 'public';
@@ -298,7 +308,6 @@
             position = clampPosition(position);
             var frame = state.mapFrames[position];
             var kind = frameKind();
-            var targetOpacity = (kind === 'satellite') ? SATELLITE_OPACITY : RADAR_OPACITY;
 
             state.animationPosition = position;
             updateTimestamp(frame, position);
@@ -306,7 +315,7 @@
 
             var entry = state.cache[frame.path];
             if (entry && entry.settled) {
-                crossFade(entry.handle, targetOpacity);
+                crossFade(entry.handle, frameOpacity(kind));
                 scheduleNext(position);
                 return;
             }
@@ -338,7 +347,7 @@
                     }
                 }
                 if (state.animationPosition === position) {
-                    crossFade(handle, targetOpacity);
+                    crossFade(handle, frameOpacity(kind));
                     scheduleNext(position);
                 } else {
                     adapter.setFrameOpacity(handle, 0);
@@ -347,6 +356,10 @@
                     cur.settled = true;
                 }
             });
+        }
+
+        function frameOpacity(kind) {
+            return kind === 'satellite' ? SATELLITE_OPACITY : state.radarOpacity;
         }
 
         function crossFade(handle, opacity) {
@@ -786,6 +799,8 @@
             var dark = state.theme === 'dark';
             btn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
             btn.setAttribute('title', dark ? 'Switch to light theme' : 'Switch to dark theme');
+            var label = byId('lv-theme-label');
+            if (label) label.textContent = dark ? 'Light mode' : 'Dark mode';
             var sun = byId('lv-theme-sun');
             var moon = byId('lv-theme-moon');
             if (sun) sun.style.display = dark ? '' : 'none';
@@ -1270,6 +1285,7 @@
             if ((c = byId('lv-scheme'))) c.style.display = isSatOnly ? 'none' : '';
             if ((c = byId('lv-arrows'))) c.style.display = isSatOnly ? 'none' : '';
             if ((c = byId('lv-cells'))) c.style.display = isSatOnly ? 'none' : '';
+            if ((c = byId('lv-opacity-wrap'))) c.style.display = isSatOnly ? 'none' : '';
             document.dispatchEvent(new CustomEvent('lvselect:sync'));
         }
 
@@ -1525,6 +1541,19 @@
             invalidateFrameLayers();
         }
 
+        function applyRadarOpacity(v) {
+            v = clampOpacity(v, state.radarOpacity);
+            state.radarOpacity = v;
+            if (state.currentHandle && frameKind() === 'radar') adapter.setFrameOpacity(state.currentHandle, v);
+            updateOpacityLabel();
+            if (config.onRadarOpacityChange) config.onRadarOpacityChange(v);
+        }
+
+        function updateOpacityLabel() {
+            var el = byId('lv-opacity-value');
+            if (el) el.textContent = Math.round(state.radarOpacity * 100) + '%';
+        }
+
         function applySmooth(b) {
             b = !!b;
             if (b === state.smooth) return;
@@ -1601,6 +1630,11 @@
                     this.setAttribute('aria-expanded', open ? 'true' : 'false');
                 });
             }
+            if ((c = byId('lv-opacity'))) {
+                c.addEventListener('input', function () {
+                    applyRadarOpacity(this.value / 100);
+                });
+            }
             if ((c = byId('lv-smooth'))) {
                 c.addEventListener('change', function () {
                     applySmooth(this.checked);
@@ -1648,6 +1682,8 @@
             if ((c = byId('lv-snow'))) c.checked = state.snow;
             if ((c = byId('lv-format'))) c.value = state.format;
             if ((c = byId('lv-tilesize'))) c.value = state.tileSize;
+            if ((c = byId('lv-opacity'))) c.value = Math.round(state.radarOpacity * 100);
+            updateOpacityLabel();
             updateRadarControlVisibility();
             updateAlertsButton();
             updateThemeButton();
@@ -1661,6 +1697,7 @@
             if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(function (pos) {
                 adapter.flyTo(pos.coords.latitude, pos.coords.longitude, 10);
+                if (config.onLocate) config.onLocate(pos.coords.latitude, pos.coords.longitude);
             }, function () {
             });
         }
@@ -1760,6 +1797,7 @@
             setSnow: applySnow,
             setFormat: applyFormat,
             setTileSize: applyTileSize,
+            setRadarOpacity: applyRadarOpacity,
             setAlertsEnabled: setAlertsEnabled,
             setTheme: setTheme
         };

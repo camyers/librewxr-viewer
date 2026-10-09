@@ -49,13 +49,16 @@
         <option value="osm-dark">Map: OSM Dark</option>
     </select>
     <div class="toolbar-actions">
+        <div class="lv-weather">
+            <button type="button" class="icon-btn" id="lv-weather-btn" aria-haspopup="true" aria-expanded="false" aria-controls="lv-weather-menu" aria-label="Current weather" title="Current weather">
+                <span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                <span id="lv-weather-temp">--&deg;</span>
+            </button>
+            <div class="settings-menu lv-wx-menu" id="lv-weather-menu" role="region" aria-label="Current weather at your location" hidden></div>
+        </div>
         <button type="button" class="icon-btn" id="lv-alerts" aria-pressed="false" aria-label="Toggle weather alerts" title="Weather alerts">
             <span class="btn-icon"><svg viewBox="0 0 24 24"><path d="M12 3 L20 19 H4 Z"/><line x1="12" y1="10" x2="12" y2="15"/><circle cx="12" cy="17.5" r="1"/></svg></span>
             Alerts
-        </button>
-        <button type="button" class="icon-btn" id="lv-theme" aria-label="Switch to light theme" title="Switch to light theme">
-            <span class="btn-icon" id="lv-theme-sun"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg></span>
-            <span class="btn-icon" id="lv-theme-moon" style="display:none"><svg viewBox="0 0 24 24"><path d="M20 14.5 A8 8 0 0 1 9.5 4 A8 8 0 1 0 20 14.5 Z"/></svg></span>
         </button>
         <button type="button" class="icon-btn" id="lv-options-btn" aria-expanded="false" aria-label="Toggle options panel" title="Options">
             <span class="btn-icon"><svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="15" cy="17" r="2"/></svg></span>
@@ -74,8 +77,8 @@
                 <label><input type="checkbox" data-key="arrows"> Motion arrows</label>
                 <label><input type="checkbox" data-key="cells"> Cell detection</label>
                 <label><input type="checkbox" data-key="basemap"> Base map</label>
+                <label><input type="checkbox" data-key="weather"> Current weather</label>
                 <label><input type="checkbox" data-key="alerts"> Alerts</label>
-                <label><input type="checkbox" data-key="theme"> Theme toggle</label>
                 <label><input type="checkbox" data-key="options"> Options</label>
                 <label><input type="checkbox" data-key="locate"> Locate me</label>
                 <button type="button" class="settings-reset" id="lv-settings-reset">Reset to defaults</button>
@@ -85,6 +88,11 @@
 </div>
 
 <div class="options-panel" id="lv-options">
+    <label class="opacity-control" id="lv-opacity-wrap" for="lv-opacity">
+        Radar opacity
+        <input type="range" id="lv-opacity" min="10" max="100" step="5" value="80">
+        <output id="lv-opacity-value" for="lv-opacity">80%</output>
+    </label>
     <label><input type="checkbox" id="lv-smooth" checked/> Smoothing</label>
     <label><input type="checkbox" id="lv-snow" checked/> Snow mask</label>
     <label for="lv-format">Format</label>
@@ -103,6 +111,11 @@
         <option value="imperial">Imperial (&deg;F, mph)</option>
         <option value="metric">Metric (&deg;C, km/h)</option>
     </select>
+    <button type="button" class="icon-btn" id="lv-theme" aria-label="Switch to light theme" title="Switch to light theme">
+        <span class="btn-icon" id="lv-theme-sun"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg></span>
+        <span class="btn-icon" id="lv-theme-moon" style="display:none"><svg viewBox="0 0 24 24"><path d="M20 14.5 A8 8 0 0 1 9.5 4 A8 8 0 1 0 20 14.5 Z"/></svg></span>
+        <span id="lv-theme-label">Light mode</span>
+    </button>
 </div>
 
 <div id="lv-map">
@@ -142,6 +155,7 @@
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="js/viewer-core.js"></script>
+<script src="js/location.js"></script>
 <script src="js/app.js"></script>
 <script src="js/search.js"></script>
 <script src="js/weather.js"></script>
