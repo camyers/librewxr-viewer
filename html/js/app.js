@@ -296,7 +296,7 @@ LibreWXR.createViewer({
     apiSources: LVR_API_SOURCES,
     apiFixed: LVR_API_FIXED,
     apiDefault: 'public',
-    view: { lat: lvrHome ? lvrHome.lat : 39.8283, lon: lvrHome ? lvrHome.lon : -98.5795, zoom: 10, maxZoom: 12 },
+    view: { lat: lvrHome ? lvrHome.lat : 39.8283, lon: lvrHome ? lvrHome.lon : -98.5795, zoom: lvrHome ? 10 : 5, maxZoom: 12 },
     nowMarker: true,
     nowMarkerLabel: true,
     theme: lvrTheme,

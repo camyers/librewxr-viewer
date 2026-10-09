@@ -3,7 +3,7 @@
 
     var DEFAULTS = {
         mapContainerId: 'lv-map',
-        view: { lat: 39.8283, lon: -98.5795, zoom: 10, maxZoom: 12 },
+        view: { lat: 39.8283, lon: -98.5795, zoom: 4, maxZoom: 12 },
         apiSources: {
             local: 'http://localhost:8080',
             public: 'https://api.librewxr.net'
