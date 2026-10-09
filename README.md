@@ -37,7 +37,7 @@ The viewer started from the Leaflet example in the [`examples/`](https://github.
 | `html/js/app.js` | The Leaflet adapter from `examples/src/leaflet.html.js`, moved into its own file and extended |
 | `html/index.html`, `html/css/styles.css` | The Leaflet example's markup and styles, split out of the single-file build and extended |
 
-The copy was taken in September 2026, so newer upstream example features, such as the lightning overlay, aren't in it yet.
+The copy was taken in September 2026 and most closely matches upstream commit [`6347e19`](https://github.com/JoshuaKimsey/LibreWXR/commit/6347e19), so newer example features, such as the lightning overlay, aren't in it yet.
 
 The LibreWXR server is licensed AGPL-3.0, but its `examples/` folder is licensed separately under MIT ([`LICENSE-examples`](LICENSE-examples)). This repo contains only code derived from the examples, no server code, so it uses the same MIT license. The original copyright notice is kept in [`LICENSE-examples`](LICENSE-examples).
 
